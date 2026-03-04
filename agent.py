@@ -66,9 +66,12 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     3. Asegúrate de que los puntos a favor y en contra se basan estrictamente en el texto proporcionado.
     4. PUNTUACIÓN DE AFINIDAD: Calcula la afinidad estrictamente como un NÚMERO ENTERO del 0 al 100 (donde 100 es el encaje perfecto).
     5. TONO Y REGISTRO: Dirígete al usuario de forma directa en segunda persona del singular. Redacta el razonamiento y las listas hablándole directamente a quien lee, evitando referirte a él en tercera persona.
+    6. EXTRACCIÓN DE DATOS: Identifica el título del puesto y el nombre de la empresa basándote en el texto de la oferta. Si alguno no aparece de forma explícita, escribe "No especificado".
     
     Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
     {{
+      "puesto": "string",
+      "empresa": "string",
       "razonamiento_interno": "Escribe aquí un párrafo detallando tu proceso lógico al comparar ambos textos. Explica qué coincide, qué falta y si existe alguna discrepancia grave.",
       "afinidad": 0,
       "puntos_a_favor": ["string"],
