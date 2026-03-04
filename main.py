@@ -1,14 +1,17 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from agent import evaluar_oferta
 import json
 import PyPDF2
 import io
 
-# Aquí es donde definimos 'app', lo que te estaba dando el error
+# Importaciones de tu agente
+from agent import evaluar_oferta, sintetizar_cv_bruto 
+
+# 1. CREAMOS LA APLICACIÓN (Los cimientos)
 app = FastAPI()
 
+# 2. CONFIGURAMOS CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,10 +20,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 3. MODELOS DE DATOS
 class DatosEvaluacion(BaseModel):
     perfil: str
     descripcion_oferta: str
 
+# 4. RUTAS (ENDPOINTS)
 @app.post("/evaluar")
 async def endpoint_evaluar(datos: DatosEvaluacion):
     print(f"\n[+] Recibida petición de evaluación.")
@@ -60,7 +65,10 @@ async def extraer_cv(archivo: UploadFile = File(...)):
         if not texto_limpio or len(texto_limpio) < 50:
             raise HTTPException(status_code=400, detail="No se pudo extraer texto legible del PDF. Puede que sea una imagen escaneada.")
             
-        return {"texto_cv": texto_limpio}
+        # Pasamos el texto robótico por nuestro Agente Sintetizador
+        texto_optimizado = sintetizar_cv_bruto(texto_limpio)
+        
+        return {"texto_cv": texto_optimizado}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando el PDF: {str(e)}")
