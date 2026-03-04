@@ -1,8 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agent import evaluar_oferta
 import json
+import PyPDF2
+import io
 
 # Aquí es donde definimos 'app', lo que te estaba dando el error
 app = FastAPI()
@@ -35,3 +37,30 @@ async def endpoint_evaluar(datos: DatosEvaluacion):
     except Exception as e:
         print(f"[-] Error parseando la respuesta de la IA: {e}")
         return {"afinidad": 0, "puntos_a_favor": [], "puntos_en_contra": ["Error de procesamiento en el servidor local."]}
+    
+@app.post("/extraer-cv")
+async def extraer_cv(archivo: UploadFile = File(...)):
+    # Verificamos que sea un PDF
+    if not archivo.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un PDF")
+    
+    try:
+        # Leemos el archivo directamente desde la memoria
+        contenido = await archivo.read()
+        lector_pdf = PyPDF2.PdfReader(io.BytesIO(contenido))
+        
+        texto_extraido = ""
+        # Recorremos todas las páginas del PDF extrayendo el texto
+        for pagina in lector_pdf.pages:
+            texto_extraido += pagina.extract_text() + "\n"
+            
+        # Limpiamos los saltos de línea excesivos
+        texto_limpio = " ".join(texto_extraido.split())
+        
+        if not texto_limpio or len(texto_limpio) < 50:
+            raise HTTPException(status_code=400, detail="No se pudo extraer texto legible del PDF. Puede que sea una imagen escaneada.")
+            
+        return {"texto_cv": texto_limpio}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando el PDF: {str(e)}")
