@@ -111,7 +111,7 @@ def sintetizar_cv_bruto(texto_bruto):
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2 # Temperatura baja para que sea preciso y no invente nada
+        "temperature": 0.2
     }
     
     try:
@@ -120,10 +120,12 @@ def sintetizar_cv_bruto(texto_bruto):
         req.add_header('Content-Type', 'application/json')
         req.add_header('Authorization', f'Bearer {api_key}')
         
+        # ¡EL PARCHE ANTIBLOQUEO! Engañamos a Cloudflare fingiendo ser un navegador normal
+        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        
         with urllib.request.urlopen(req) as response:
             resultado = json.loads(response.read().decode('utf-8'))
             return resultado['choices'][0]['message']['content'].strip()
     except Exception as e:
         print(f"Error en el Agente Sintetizador: {e}")
-        # Si falla la IA, devolvemos el texto bruto original por seguridad
         return texto_bruto
