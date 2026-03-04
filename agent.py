@@ -90,8 +90,17 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
 
 
 def sintetizar_cv_bruto(texto_bruto):
-    api_key = os.getenv("GROQ_API_KEY") 
+    import urllib.error # Por si acaso no estaba importado arriba
+    
     url = "https://api.groq.com/openai/v1/chat/completions"
+    api_key = os.getenv("GROQ_API_KEY") 
+    
+    # --- CHIVATO DE DIAGNÓSTICO ---
+    if not api_key:
+        print("\n[-] ERROR SINTETIZADOR: API Key es 'None'.")
+    else:
+        print(f"\n[+] SINTETIZADOR: API Key detectada en memoria. Empieza por: {api_key[:8]}...")
+    # ------------------------------
     
     prompt = f"""
     Eres un experto en selección de talento. Tu tarea es analizar el siguiente texto desordenado extraído de un PDF y sintetizarlo en un perfil profesional claro y estructurado.
@@ -107,11 +116,11 @@ def sintetizar_cv_bruto(texto_bruto):
     """
     
     payload = {
-        "model": "llama-3.1-70b-versatile",
+        "model": "llama-3.3-70b-versatile", # ¡Actualizado a la versión 3.3!
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2
+        "temperature": 0.1 # Igualado a la temperatura de tu otra IA
     }
     
     try:
@@ -119,13 +128,17 @@ def sintetizar_cv_bruto(texto_bruto):
         req = urllib.request.Request(url, data=data)
         req.add_header('Content-Type', 'application/json')
         req.add_header('Authorization', f'Bearer {api_key}')
-        
-        # ¡EL PARCHE ANTIBLOQUEO! Engañamos a Cloudflare fingiendo ser un navegador normal
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
         
         with urllib.request.urlopen(req) as response:
             resultado = json.loads(response.read().decode('utf-8'))
             return resultado['choices'][0]['message']['content'].strip()
+            
+    # --- AQUÍ ATRAPAMOS EL ERROR EXACTO DE GROQ ---
+    except urllib.error.HTTPError as e:
+        error_details = e.read().decode('utf-8')
+        print(f"\n[-] GROQ ESTÁ ENFADADO CON EL SINTETIZADOR POR ESTO: {error_details}")
+        return texto_bruto
     except Exception as e:
-        print(f"Error en el Agente Sintetizador: {e}")
+        print(f"Error conectando con la API de Groq en Sintetizador: {e}")
         return texto_bruto
