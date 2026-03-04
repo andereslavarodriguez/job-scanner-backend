@@ -90,37 +90,31 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
 
 
 def sintetizar_cv_bruto(texto_bruto):
-    import urllib.error # Por si acaso no estaba importado arriba
+    import urllib.request, urllib.error, json, os
     
     url = "https://api.groq.com/openai/v1/chat/completions"
     api_key = os.getenv("GROQ_API_KEY") 
     
-    # --- CHIVATO DE DIAGNÓSTICO ---
-    if not api_key:
-        print("\n[-] ERROR SINTETIZADOR: API Key es 'None'.")
-    else:
-        print(f"\n[+] SINTETIZADOR: API Key detectada en memoria. Empieza por: {api_key[:8]}...")
-    # ------------------------------
-    
     prompt = f"""
-    Eres un experto en selección de talento. Tu tarea es analizar el siguiente texto desordenado extraído de un PDF y sintetizarlo en un perfil profesional claro y estructurado.
+    Eres un experto en selección de talento. Analiza este texto extraído de un currículum desordenado y sintetízalo en un perfil profesional claro y estructurado.
     
     TEXTO BRUTO DEL CV:
     {texto_bruto}
     
     INSTRUCCIONES UNIVERSALES:
-    1. Extrae y unifica la información vital: rol principal, años de experiencia, habilidades clave, herramientas y nivel educativo.
-    2. Elimina caracteres extraños, saltos de línea rotos, columnas descolocadas y datos irrelevantes (como direcciones físicas o aficiones).
-    3. Redacta el resultado como un resumen profesional cohesionado en primera persona, fácil de leer y directo al grano.
-    4. Devuelve ÚNICAMENTE el texto final sintetizado. No incluyas saludos, introducciones, ni confirmaciones.
+    1. Extrae y unifica la información vital de manera genérica y objetiva.
+    2. Elimina caracteres extraños, saltos de línea rotos y datos irrelevantes.
+    3. Redacta el resultado como un resumen profesional en primera persona, fácil de leer y directo.
+    4. Devuelve ÚNICAMENTE el texto final sintetizado. No uses formato JSON, solo texto plano.
     """
     
     payload = {
-        "model": "llama-3.3-70b-versatile", # ¡Actualizado a la versión 3.3!
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.1 # Igualado a la temperatura de tu otra IA
+        "temperature": 0.1
+        # IMPORTANTE: Eliminamos el "response_format" porque aquí queremos texto normal
     }
     
     try:
@@ -134,11 +128,11 @@ def sintetizar_cv_bruto(texto_bruto):
             resultado = json.loads(response.read().decode('utf-8'))
             return resultado['choices'][0]['message']['content'].strip()
             
-    # --- AQUÍ ATRAPAMOS EL ERROR EXACTO DE GROQ ---
     except urllib.error.HTTPError as e:
+        # Ahora sí, si Groq se enfada, leeremos su mensaje exacto en Render
         error_details = e.read().decode('utf-8')
-        print(f"\n[-] GROQ ESTÁ ENFADADO CON EL SINTETIZADOR POR ESTO: {error_details}")
+        print(f"\n[-] GROQ RECHAZÓ LA PETICIÓN 400: {error_details}")
         return texto_bruto
     except Exception as e:
-        print(f"Error conectando con la API de Groq en Sintetizador: {e}")
+        print(f"\n[-] ERROR LOCAL AL SINTETIZAR: {e}")
         return texto_bruto
