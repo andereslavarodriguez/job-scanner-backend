@@ -143,3 +143,46 @@ def sintetizar_cv_bruto(texto_bruto):
     except Exception as e:
         print(f"\n[-] ERROR LOCAL AL SINTETIZAR: {e}")
         return texto_bruto
+    
+async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
+    prompt = f"""
+    Eres un asistente de Inteligencia Artificial que rellena formularios de empleo de forma invisible.
+    
+    PERFIL DEL CANDIDATO:
+    {perfil_usuario}
+    
+    CONTEXTO DE LA OFERTA DE EMPLEO:
+    {texto_oferta}
+    
+    CAMPO A RELLENAR:
+    "{contexto_campo}"
+    
+    INSTRUCCIONES ESTRICTAS:
+    1. Tu única misión es generar el TEXTO EXACTO que debe introducirse en esa casilla del formulario.
+    2. Analiza el "CAMPO A RELLENAR". Si es un dato simple (como "Nombre" o "Teléfono"), extrae ese dato exacto del perfil y escríbelo sin añadir nada más.
+    3. Si el campo requiere desarrollo, redacta una respuesta profesional, concisa y en primera persona. 
+    4. ALINEACIÓN ESTRATÉGICA: Analiza el "CONTEXTO DE LA OFERTA". Omite la información del perfil que sea irrelevante para este caso genérico y enfatiza las habilidades y experiencias que maximicen la compatibilidad con los requisitos descritos.
+    5. Si la información solicitada no existe de ninguna forma en el perfil, el texto de respuesta debe ser exactamente la palabra: INCOMPLETO.
+    6. No incluyas explicaciones.
+    
+    Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
+    {{
+      "respuesta_generada": "string"
+    }}
+    """
+    
+    import json
+    import re
+    import asyncio
+    
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
+    
+    match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
+    if match:
+        try:
+            datos = json.loads(match.group(0))
+            return datos.get("respuesta_generada", "INCOMPLETO")
+        except:
+            return "Error procesando el JSON de Groq"
+    else:
+        return "Error: Groq no devolvió formato JSON"

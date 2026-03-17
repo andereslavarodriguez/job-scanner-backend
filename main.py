@@ -1,12 +1,12 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import PyPDF2
 import io
 
-# Importaciones de tu agente
-from agent import evaluar_oferta, sintetizar_cv_bruto 
+# Importamos la nueva función generar_respuesta_campo
+from agent import evaluar_oferta, sintetizar_cv_bruto, generar_respuesta_campo 
 
 # 1. CREAMOS LA APLICACIÓN (Los cimientos)
 app = FastAPI()
@@ -72,3 +72,23 @@ async def extraer_cv(archivo: UploadFile = File(...)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando el PDF: {str(e)}")
+    
+@app.post("/rellenar_campo")
+async def rellenar_campo(request: Request):
+    try:
+        data = await request.json()
+        perfil_usuario = data.get("perfil", "")
+        contexto_campo = data.get("contexto", "")
+        texto_oferta = data.get("oferta", "") # NUEVO: Atrapamos el contexto de la web
+        
+        print(f"\n[+] Solicitud de autorrellenado recibida para el campo: {contexto_campo}")
+        
+        # Pasamos los 3 datos a la IA de Groq
+        texto_final = await generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta)
+        
+        print(f"[+] Respuesta generada: {texto_final}")
+        return {"respuesta": texto_final}
+
+    except Exception as e:
+        print(f"[-] Error en el endpoint rellenar_campo: {str(e)}")
+        return {"error": str(e)}
