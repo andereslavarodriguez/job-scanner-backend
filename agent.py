@@ -112,7 +112,8 @@ def sintetizar_cv_bruto(texto_bruto):
     1. Extrae y unifica la información vital de manera genérica y objetiva.
     2. Elimina caracteres extraños, saltos de línea rotos y datos irrelevantes.
     3. Redacta el resultado como un resumen profesional en primera persona, fácil de leer y directo.
-    4. Devuelve ÚNICAMENTE el texto final sintetizado. No uses formato JSON, solo texto plano.
+    4. PRESERVACIÓN DE DATOS DUROS: Mantén intactos y lista al principio del documento todos los datos de contacto, enlaces, identificadores y métricas cuantitativas presentes en el texto original.
+    5. Devuelve ÚNICAMENTE el texto final sintetizado. No uses formato JSON, solo texto plano.
     """
     
     payload = {
@@ -121,7 +122,6 @@ def sintetizar_cv_bruto(texto_bruto):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.1
-        # IMPORTANTE: Eliminamos el "response_format" porque aquí queremos texto normal
     }
     
     try:
@@ -136,7 +136,6 @@ def sintetizar_cv_bruto(texto_bruto):
             return resultado['choices'][0]['message']['content'].strip()
             
     except urllib.error.HTTPError as e:
-        # Ahora sí, si Groq se enfada, leeremos su mensaje exacto en Render
         error_details = e.read().decode('utf-8')
         print(f"\n[-] GROQ RECHAZÓ LA PETICIÓN 400: {error_details}")
         return texto_bruto
@@ -170,10 +169,6 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
       "respuesta_generada": "string"
     }}
     """
-    
-    import json
-    import re
-    import asyncio
     
     respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
     
