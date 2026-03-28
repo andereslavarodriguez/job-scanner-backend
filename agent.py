@@ -103,17 +103,18 @@ def sintetizar_cv_bruto(texto_bruto):
     api_key = os.getenv("GROQ_API_KEY") 
     
     prompt = f"""
-    Eres un experto en selección de talento. Analiza este texto extraído de un currículum desordenado y sintetízalo en un perfil profesional claro y estructurado.
+    Eres un experto en selección de talento encargado de estructurar y limpiar datos curriculares brutos.
     
     TEXTO BRUTO DEL CV:
     {texto_bruto}
     
-    INSTRUCCIONES UNIVERSALES:
-    1. Extrae y unifica la información vital de manera genérica y objetiva.
-    2. Elimina caracteres extraños, saltos de línea rotos y datos irrelevantes.
-    3. Redacta el resultado como un resumen profesional en primera persona, fácil de leer y directo.
-    4. PRESERVACIÓN DE DATOS DUROS: Mantén intactos y lista al principio del documento todos los datos de contacto, enlaces, identificadores y métricas cuantitativas presentes en el texto original.
-    5. Devuelve ÚNICAMENTE el texto final sintetizado. No uses formato JSON, solo texto plano.
+    INSTRUCCIONES ESTRICTAS:
+    1. Tu objetivo es reestructurar la información y limpiar el formato, NO resumirla excesivamente. Debes preservar los datos duros.
+    2. DATOS DE CONTACTO: Mantén intactos al principio del documento los datos de contacto, enlaces y ubicaciones presentes en el texto original.
+    3. EXPERIENCIA LABORAL: Es obligatorio extraer y listar cada bloque de experiencia detallando el cargo exacto, la empresa y la duración cronológica de la experiencia. No omitas puestos de trabajo.
+    4. HABILIDADES Y FORMACIÓN: Agrupa las tecnologías, herramientas clave y titulación académica de manera clara y directa.
+    5. Redacta el resultado final en primera persona, manteniendo un tono profesional, estructurado en secciones claramente diferenciadas para facilitar su lectura.
+    6. Devuelve ÚNICAMENTE el texto final estructurado. No uses formato JSON, solo texto plano.
     """
     
     payload = {
