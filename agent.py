@@ -158,18 +158,23 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
     "{contexto_campo}"
     
     INSTRUCCIONES ESTRICTAS:
-    1. Tu única misión es generar el TEXTO EXACTO que debe introducirse en esa casilla del formulario.
-    2. Analiza el "CAMPO A RELLENAR". Si es un dato simple (como "Nombre" o "Teléfono"), extrae ese dato exacto del perfil y escríbelo sin añadir nada más.
-    3. Si el campo requiere desarrollo, redacta una respuesta profesional, concisa y en primera persona. 
-    4. ALINEACIÓN ESTRATÉGICA: Analiza el "CONTEXTO DE LA OFERTA". Omite la información del perfil que sea irrelevante para este caso genérico y enfatiza las habilidades y experiencias que maximicen la compatibilidad con los requisitos descritos.
-    5. Si la información solicitada no existe de ninguna forma en el perfil, el texto de respuesta debe ser exactamente la palabra: INCOMPLETO.
-    6. No incluyas explicaciones.
+    1. IDIOMA OBLIGATORIO: Detecta en qué idioma está escrito el "CAMPO A RELLENAR" o el "CONTEXTO DE LA OFERTA" y genera tu respuesta EXACTAMENTE en ese mismo idioma. Si la pregunta está en inglés, responde en inglés nativo.
+    2. RESPUESTA ESPECÍFICA: Responde ÚNICAMENTE a lo que se pide en el "CAMPO A RELLENAR". No redactes un resumen general de tu perfil si no te lo piden explícitamente.
+    3. Si el campo es un dato simple (como "Nombre" o "Teléfono"), extrae ese dato exacto y escríbelo sin añadir nada más.
+    4. Si el campo requiere desarrollo, redacta una respuesta profesional, concisa y en primera persona, centrada exclusivamente en responder a esa pregunta concreta.
+    5. ALINEACIÓN ESTRATÉGICA: Usa el contexto de la oferta para matizar tu respuesta, pero nunca te desvíes de la pregunta principal del campo.
+    6. Si la información solicitada no existe de ninguna forma en el perfil, el texto de respuesta debe ser exactamente la palabra: INCOMPLETO.
+    7. No incluyas explicaciones previas ni posteriores.
     
     Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
     {{
       "respuesta_generada": "string"
     }}
     """
+    
+    import json
+    import re
+    import asyncio
     
     respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
     
