@@ -61,13 +61,12 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     4. Conditions and Logistics (0-15 points): Does the candidate fit the work model (remote/on-site), location, and availability?
 
     PENALIZATION RULES (Red flags):
-    - If the candidate lacks a requirement labeled as "imprescindible", "excluyente", or "mandatory", the total affinity score MUST NOT exceed 40 points, regardless of other matches.
+    - If the candidate lacks a requirement labeled as mandatory or exclusive, the total affinity score MUST NOT exceed 40 points, regardless of other matches.
 
     WRITING INSTRUCTIONS:
-    1. LANGUAGE DETECTION: Detect the language of the "JOB OFFER TEXT". Your final evaluation (puntos_a_favor, puntos_en_contra, razonamiento_interno) MUST be written in that EXACT SAME LANGUAGE.
-    2. COHERENCE: "puntos_a_favor" and "puntos_en_contra" must justify the score gains or losses based on the rubric.
-    3. TONE: Address the user directly in the second person singular (e.g., "tienes", "te falta" if Spanish; "you have", "you lack" if English).
-    4. DATA EXTRACTION: Identify the job title and company name. If not explicitly found, write "No especificado".
+    1. LANGUAGE: Detect the language of the "JOB OFFER TEXT". Write the content of your evaluation in that EXACT SAME LANGUAGE.
+    2. TONE: Address the user directly in the second person singular.
+    3. JSON KEYS: ABSOLUTELY DO NOT translate the JSON keys. The keys must remain exactly as shown in the structure below ("puesto", "empresa", "razonamiento_interno", "afinidad", "puntos_a_favor", "puntos_en_contra").
     
     Respond ONLY with a valid JSON following this exact structure:
     {{
