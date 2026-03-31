@@ -6,7 +6,7 @@ import re
 import os
 from dotenv import load_dotenv
 
-# Cargamos las variables ocultas del sistema [cite: 2025-12-30]
+# Cargamos las variables ocultas del sistema
 load_dotenv()
 
 def _ejecutar_groq_api(prompt):
@@ -52,34 +52,35 @@ def _ejecutar_groq_api(prompt):
     
 async def evaluar_oferta(texto_oferta, perfil_usuario):
     prompt = f"""
-    Eres un evaluador riguroso de perfiles profesionales. Tu objetivo es calcular la compatibilidad exacta entre un candidato y una oferta de empleo utilizando un sistema de puntuación matemático, estricto y objetivo.
+    You are a rigorous professional profile evaluator. Your goal is to calculate the exact compatibility between a candidate and a job offer using a mathematical, strict, and objective scoring system.
     
-    PERFIL DEL CANDIDATO:
+    CANDIDATE PROFILE:
     {perfil_usuario}
     
-    TEXTO DE LA OFERTA:
+    JOB OFFER TEXT:
     {texto_oferta}
     
-    SISTEMA DE PUNTUACIÓN (Total: 100 puntos):
-    Para calcular la afinidad, evalúa estas 4 categorías genéricas de forma estricta:
-    1. Requisitos Técnicos y Conocimientos (0-35 puntos): ¿Posee las habilidades duras, herramientas o conocimientos teóricos clave que exige la oferta?
-    2. Experiencia y Nivel (0-30 puntos): ¿Coinciden los años de experiencia y el nivel de responsabilidad exigido? Resta puntos por falta de experiencia o por sobrecualificación evidente.
-    3. Formación y Habilidades Transversales (0-20 puntos): ¿Cumple con las titulaciones, certificaciones, idiomas y competencias interpersonales requeridas?
-    4. Condiciones y Logística (0-15 puntos): ¿Encaja en el modelo de trabajo (remoto/presencial), ubicación y disponibilidad descrita en la oferta?
+    SCORING SYSTEM (Total: 100 points):
+    To calculate affinity, strictly evaluate these 4 generic categories:
+    1. Technical Requirements and Knowledge (0-35 points): Does the candidate possess the hard skills, tools, or key theoretical knowledge required by the offer?
+    2. Experience and Level (0-30 points): Do the years of experience and demanded level of responsibility match? Subtract points for lack of experience or obvious overqualification.
+    3. Training and Transversal Skills (0-20 points): Does the candidate meet the required degrees, certifications, languages, and interpersonal skills?
+    4. Conditions and Logistics (0-15 points): Does the candidate fit the work model (remote/on-site), location, and availability described in the offer?
 
-    REGLAS DE PENALIZACIÓN (Red flags):
-    - Si al candidato le falta un requisito catalogado en la oferta como "imprescindible", "excluyente" o "mandatory" (por ejemplo, un idioma obligatorio o un permiso de trabajo), la puntuación total de afinidad NUNCA debe superar los 40 puntos, independientemente de lo bien que encaje en el resto.
+    PENALIZATION RULES (Red flags):
+    - If the candidate lacks a requirement cataloged in the offer as "imprescindible", "excluyente", or "mandatory" (for example, a mandatory language or work permit), the total affinity score MUST NEVER exceed 40 points, regardless of how well they fit the rest.
 
-    INSTRUCCIONES DE REDACCIÓN:
-    - COHERENCIA OBLIGATORIA: Los "puntos_a_favor" y "puntos_en_contra" deben reflejar y justificar exactamente las pérdidas y ganancias de puntos de la rúbrica.
-    - TONO Y REGISTRO: Dirígete al usuario de forma directa en segunda persona del singular ("tienes", "te falta").
-    - EXTRACCIÓN DE DATOS: Identifica el título del puesto y el nombre de la empresa. Si no aparecen explícitamente, escribe "No especificado".
+    WRITING INSTRUCTIONS:
+    - LANGUAGE REQUIREMENT: Detect the language of the "JOB OFFER TEXT". Your evaluation content MUST be written in that EXACT SAME LANGUAGE. DO NOT translate the JSON keys.
+    - MANDATORY COHERENCE: The "puntos_a_favor" and "puntos_en_contra" must exactly reflect and justify the points gained and lost from the rubric.
+    - TONE AND REGISTER: Address the user directly in the second person singular.
+    - DATA EXTRACTION: Identify the job title and the company name. If they do not explicitly appear, write "No especificado".
     
-    Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
+    Respond ONLY with a valid JSON that follows this exact structure:
     {{
       "puesto": "string",
       "empresa": "string",
-      "razonamiento_interno": "Realiza aquí el desglose de la puntuación obtenida en cada una de las 4 categorías, suma el total y explica brevemente la lógica de las penalizaciones aplicadas.",
+      "razonamiento_interno": "Perform the breakdown of the score obtained in each of the 4 categories here, sum the total, and briefly explain the logic of the applied penalizations.",
       "afinidad": 0,
       "puntos_a_favor": ["string"],
       "puntos_en_contra": ["string"]
@@ -103,18 +104,19 @@ def sintetizar_cv_bruto(texto_bruto):
     api_key = os.getenv("GROQ_API_KEY") 
     
     prompt = f"""
-    Eres un experto en selección de talento encargado de estructurar y limpiar datos curriculares brutos.
+    You are a talent acquisition expert in charge of structuring and cleaning raw resume data.
     
-    TEXTO BRUTO DEL CV:
+    RAW RESUME TEXT:
     {texto_bruto}
     
-    INSTRUCCIONES ESTRICTAS:
-    1. Tu objetivo es reestructurar la información y limpiar el formato, NO resumirla excesivamente. Debes preservar los datos duros.
-    2. DATOS DE CONTACTO: Mantén intactos al principio del documento los datos de contacto, enlaces y ubicaciones presentes en el texto original.
-    3. EXPERIENCIA LABORAL: Es obligatorio extraer y listar cada bloque de experiencia detallando el cargo exacto, la empresa y la duración cronológica de la experiencia. No omitas puestos de trabajo.
-    4. HABILIDADES Y FORMACIÓN: Agrupa las tecnologías, herramientas clave y titulación académica de manera clara y directa.
-    5. Redacta el resultado final en primera persona, manteniendo un tono profesional, estructurado en secciones claramente diferenciadas para facilitar su lectura.
-    6. Devuelve ÚNICAMENTE el texto final estructurado. No uses formato JSON, solo texto plano.
+    STRICT INSTRUCTIONS:
+    1. Your goal is to restructure the information and clean the format, NOT to summarize it excessively. You must preserve the hard data.
+    2. LANGUAGE REQUIREMENT: Detect the language of the "RAW RESUME TEXT". Your final structured text MUST be written in that EXACT SAME LANGUAGE. Do not translate it.
+    3. CONTACT DATA: Keep intact at the beginning of the document the contact details, links, and locations present in the original text.
+    4. WORK EXPERIENCE: It is mandatory to extract and list each block of experience detailing the exact job title, the company, and the chronological duration of the experience. Do not omit job positions.
+    5. SKILLS AND TRAINING: Group the technologies, key tools, and academic degrees clearly and directly.
+    6. Write the final result in the first person, maintaining a professional tone, structured in clearly differentiated sections to facilitate its reading.
+    7. Return ONLY the final structured text. Do not use JSON format, only plain text.
     """
     
     payload = {
@@ -146,26 +148,27 @@ def sintetizar_cv_bruto(texto_bruto):
     
 async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
     prompt = f"""
-    Eres un asistente de Inteligencia Artificial que rellena formularios de empleo de forma invisible.
+    You are an Artificial Intelligence assistant that fills out job application forms invisibly.
     
-    PERFIL DEL CANDIDATO:
+    CANDIDATE PROFILE:
     {perfil_usuario}
     
-    CONTEXTO DE LA OFERTA DE EMPLEO:
+    JOB OFFER CONTEXT:
     {texto_oferta}
     
-    CAMPO A RELLENAR:
+    FIELD TO FILL OUT:
     "{contexto_campo}"
     
-    INSTRUCCIONES ESTRICTAS:
-    1. Tu única misión es generar el TEXTO EXACTO que debe introducirse en esa casilla del formulario.
-    2. Analiza el "CAMPO A RELLENAR". Si es un dato simple (como "Nombre" o "Teléfono"), extrae ese dato exacto del perfil y escríbelo sin añadir nada más.
-    3. Si el campo requiere desarrollo, redacta una respuesta profesional, concisa y en primera persona. 
-    4. ALINEACIÓN ESTRATÉGICA: Analiza el "CONTEXTO DE LA OFERTA". Omite la información del perfil que sea irrelevante para este caso genérico y enfatiza las habilidades y experiencias que maximicen la compatibilidad con los requisitos descritos.
-    5. Si la información solicitada no existe de ninguna forma en el perfil, el texto de respuesta debe ser exactamente la palabra: INCOMPLETO.
-    6. No incluyas explicaciones.
+    STRICT INSTRUCTIONS:
+    1. LANGUAGE REQUIREMENT: Detect the language of the "FIELD TO FILL OUT". You MUST generate your EXACT TEXT in that SAME LANGUAGE, regardless of the language of the candidate profile or the job offer.
+    2. Your only mission is to generate the EXACT TEXT that must be entered into that form box.
+    3. Analyze the "FIELD TO FILL OUT". If it is a simple piece of data (like "Name" or "Phone"), extract that exact data from the profile and write it without adding anything else.
+    4. If the field requires development, write a professional, concise response in the first person. 
+    5. STRATEGIC ALIGNMENT: Analyze the "JOB OFFER CONTEXT". Omit profile information that is irrelevant to this generic case and emphasize the skills and experiences that maximize compatibility with the described requirements.
+    6. If the requested information does not exist in any way in the profile, the response text must be exactly the word: INCOMPLETO.
+    7. Do not include explanations.
     
-    Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
+    Respond ONLY with a valid JSON that follows this exact structure:
     {{
       "respuesta_generada": "string"
     }}
