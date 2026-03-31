@@ -139,7 +139,6 @@ def sintetizar_cv_bruto(texto_bruto):
         return texto_bruto
     
 async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
-    # Este ya lo teníamos optimizado en inglés
     prompt = f"""
     You are an AI assistant specialized in filling out job application forms automatically.
     
@@ -149,20 +148,28 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
     JOB OFFER CONTEXT:
     {texto_oferta}
     
-    FIELD TO FILL OUT:
+    FIELD TO FILL OUT (Target Question):
     "{contexto_campo}"
     
     STRICT INSTRUCTIONS:
-    1. LANGUAGE ENFORCEMENT: Detect the language of the "FIELD TO FILL OUT". Respond in that EXACT language.
-    2. Answer ONLY the specific question.
-    3. FIRST PERSON: Use "I" (or equivalent in the target language).
-    4. If info is missing, respond exactly: INCOMPLETO.
+    1. ABSOLUTE LANGUAGE RULE: The language of your response MUST EXACTLY MATCH the language of the "FIELD TO FILL OUT". You MUST IGNORE the language of the CANDIDATE PROFILE and JOB OFFER CONTEXT when choosing your output language. 
+       - If "FIELD TO FILL OUT" is in English -> You MUST write the response in English.
+       - If "FIELD TO FILL OUT" is in Spanish -> You MUST write the response in Spanish.
+    2. Answer ONLY the specific question asked in the "FIELD TO FILL OUT". Do not invent information.
+    3. FIRST PERSON: Use the first person singular ("I", "Yo", etc.) maintaining a professional tone.
+    4. ALIGNMENT: Adapt the profile information to fit the job offer context, but answer ONLY the field's question.
+    5. MISSING INFO: If the requested information is absolutely nowhere to be found in the profile, your output must be exactly the word: INCOMPLETO.
+    6. Provide NO explanations, NO conversational filler, and NO introductory phrases.
     
     Respond ONLY with a valid JSON:
     {{
       "respuesta_generada": "string"
     }}
     """
+    
+    import json
+    import re
+    import asyncio
     
     respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
