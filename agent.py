@@ -146,27 +146,26 @@ def sintetizar_cv_bruto(texto_bruto):
     
 async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
     prompt = f"""
-    Eres un asistente de Inteligencia Artificial que rellena formularios de empleo de forma invisible.
+    You are an AI assistant specialized in filling out job application forms automatically.
     
-    PERFIL DEL CANDIDATO:
+    CANDIDATE PROFILE:
     {perfil_usuario}
     
-    CONTEXTO DE LA OFERTA DE EMPLEO:
+    JOB OFFER CONTEXT:
     {texto_oferta}
     
-    CAMPO A RELLENAR:
+    FIELD TO FILL OUT (This is the specific question you must answer):
     "{contexto_campo}"
     
-    INSTRUCCIONES ESTRICTAS:
-    1. IDIOMA OBLIGATORIO: Detecta en qué idioma está escrito el "CAMPO A RELLENAR" o el "CONTEXTO DE LA OFERTA" y genera tu respuesta EXACTAMENTE en ese mismo idioma. Si la pregunta está en inglés, responde en inglés nativo.
-    2. RESPUESTA ESPECÍFICA: Responde ÚNICAMENTE a lo que se pide en el "CAMPO A RELLENAR". No redactes un resumen general de tu perfil si no te lo piden explícitamente.
-    3. Si el campo es un dato simple (como "Nombre" o "Teléfono"), extrae ese dato exacto y escríbelo sin añadir nada más.
-    4. Si el campo requiere desarrollo, redacta una respuesta profesional, concisa y en primera persona, centrada exclusivamente en responder a esa pregunta concreta.
-    5. ALINEACIÓN ESTRATÉGICA: Usa el contexto de la oferta para matizar tu respuesta, pero nunca te desvíes de la pregunta principal del campo.
-    6. Si la información solicitada no existe de ninguna forma en el perfil, el texto de respuesta debe ser exactamente la palabra: INCOMPLETO.
-    7. No incluyas explicaciones previas ni posteriores.
+    STRICT INSTRUCTIONS:
+    1. LANGUAGE ENFORCEMENT: Detect the language of the "FIELD TO FILL OUT". Your final answer MUST be written in that EXACT SAME LANGUAGE. If the question is in English, you must respond in English.
+    2. Answer ONLY what is being asked in the "FIELD TO FILL OUT". Do not write a general summary of the profile.
+    3. If the field asks for simple data (like "Name" or "Phone"), just extract it and output it.
+    4. If the field requires a descriptive answer, write a professional, concise response in the FIRST PERSON ("I"), tailored to the specific question using the candidate's profile.
+    5. If the requested information is absolutely nowhere to be found in the profile, your output must be exactly the word: INCOMPLETO.
+    6. Provide no explanations or conversational filler.
     
-    Responde ÚNICAMENTE con un JSON válido que siga esta estructura exacta:
+    You must respond ONLY with a valid JSON following this exact structure:
     {{
       "respuesta_generada": "string"
     }}
