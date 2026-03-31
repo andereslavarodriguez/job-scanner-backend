@@ -45,7 +45,7 @@ def _ejecutar_groq_api(prompt):
 
 async def evaluar_oferta(texto_oferta, perfil_usuario):
     prompt = f"""
-    You are a rigorous professional profile evaluator. Your goal is to calculate the exact compatibility between a candidate and a job offer using a mathematical, strict, and objective scoring system.
+    You are a rigorous professional profile evaluator. Calculate the exact compatibility between the candidate and the job offer.
     
     CANDIDATE PROFILE:
     {perfil_usuario}
@@ -54,28 +54,27 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     {texto_oferta}
     
     SCORING SYSTEM (Total: 100 points):
-    Evaluate these 4 generic categories strictly to calculate affinity:
-    1. Technical Requirements and Knowledge (0-35 points): Does the candidate have the hard skills, tools, or theoretical knowledge required?
-    2. Experience and Level (0-30 points): Do the years of experience and level of responsibility match? Subtract points for lack of experience or obvious overqualification.
-    3. Training and Transversal Skills (0-20 points): Does the candidate meet the degrees, certifications, languages, and interpersonal skills?
-    4. Conditions and Logistics (0-15 points): Does the candidate fit the work model (remote/on-site), location, and availability?
+    1. Technical Requirements (0-35 points)
+    2. Experience and Level (0-30 points)
+    3. Training and Soft Skills (0-20 points)
+    4. Conditions and Logistics (0-15 points)
 
-    PENALIZATION RULES (Red flags):
-    - If the candidate lacks a requirement labeled as mandatory or exclusive, the total affinity score MUST NOT exceed 40 points, regardless of other matches.
+    PENALIZATION RULES:
+    - If a mandatory requirement is missing, the total affinity score MUST NOT exceed 40 points.
 
     WRITING INSTRUCTIONS:
-    1. LANGUAGE: Detect the language of the "JOB OFFER TEXT". Write the content of your evaluation in that EXACT SAME LANGUAGE.
+    1. LANGUAGE: Detect the language of the "JOB OFFER TEXT". You MUST write the content of your evaluation in that EXACT SAME LANGUAGE.
     2. TONE: Address the user directly in the second person singular.
-    3. JSON KEYS: ABSOLUTELY DO NOT translate the JSON keys. The keys must remain exactly as shown in the structure below ("puesto", "empresa", "razonamiento_interno", "afinidad", "puntos_a_favor", "puntos_en_contra").
+    3. JSON KEYS: DO NOT translate the JSON keys. They must remain exactly as shown below.
     
-    Respond ONLY with a valid JSON following this exact structure:
+    Output ONLY a valid JSON object. Do not include any conversational text before or after the JSON. Use this exact structure:
     {{
-      "puesto": "string",
-      "empresa": "string",
-      "razonamiento_interno": "string",
+      "puesto": "Insert job title or 'No especificado'",
+      "empresa": "Insert company name or 'No especificado'",
+      "razonamiento_interno": "Insert score breakdown",
       "afinidad": 0,
-      "puntos_a_favor": ["string"],
-      "puntos_en_contra": ["string"]
+      "puntos_a_favor": ["Point 1", "Point 2"],
+      "puntos_en_contra": ["Point 1"]
     }}
     """
     
