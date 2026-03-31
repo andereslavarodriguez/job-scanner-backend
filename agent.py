@@ -67,14 +67,14 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     2. TONE: Address the user directly in the second person singular.
     3. JSON KEYS: DO NOT translate the JSON keys. They must remain exactly as shown below.
     
-    Output ONLY a valid JSON object. Do not include any conversational text before or after the JSON. Use this exact structure:
+    Respond ONLY with a valid JSON object. Ensure the output strictly follows this format:
     {{
-      "puesto": "Insert job title or 'No especificado'",
-      "empresa": "Insert company name or 'No especificado'",
-      "razonamiento_interno": "Insert score breakdown",
+      "puesto": "string",
+      "empresa": "string",
+      "razonamiento_interno": "string",
       "afinidad": 0,
-      "puntos_a_favor": ["Point 1", "Point 2"],
-      "puntos_en_contra": ["Point 1"]
+      "puntos_a_favor": ["string"],
+      "puntos_en_contra": ["string"]
     }}
     """
     
