@@ -1,5 +1,5 @@
 import urllib.request
-import urllib.error  # <-- Añadimos esto para poder leer la mente de Groq
+import urllib.error
 import json
 import asyncio
 import re
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 # Cargamos las variables ocultas del sistema
 load_dotenv()
 
-def _ejecutar_groq_api(prompt):
+def _ejecutar_groq_api(prompt, max_tokens=800):
     url = "https://api.groq.com/openai/v1/chat/completions"
     api_key = os.getenv("GROQ_API_KEY")
     
@@ -21,12 +21,13 @@ def _ejecutar_groq_api(prompt):
     # ------------------------------
     
     payload = {
-        # Actualizamos al modelo más moderno por si el anterior caducó
-        "model": "llama-3.3-70b-versatile", 
+        # Cambiamos a un modelo más ágil con límites diarios mucho más altos
+        "model": "llama-3.1-8b-instant", 
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.1, # Subimos de 0.0 a 0.1 (a algunas APIs les da error el cero absoluto)
+        "temperature": 0.1,
+        "max_tokens": max_tokens, # <-- NUEVO CORTAFUEGOS
         "response_format": {"type": "json_object"} 
     }
     
@@ -41,7 +42,6 @@ def _ejecutar_groq_api(prompt):
             resultado = json.loads(response.read().decode('utf-8'))
             return resultado['choices'][0]['message']['content']
             
-    # --- AQUÍ ATRAPAMOS EL ERROR EXACTO DE GROQ ---
     except urllib.error.HTTPError as e:
         error_details = e.read().decode('utf-8')
         print(f"\n[-] GROQ ESTÁ ENFADADO POR ESTO: {error_details}")
@@ -51,14 +51,18 @@ def _ejecutar_groq_api(prompt):
         return ""
     
 async def evaluar_oferta(texto_oferta, perfil_usuario):
+    # Recortamos la oferta a unos ~1000 tokens máximos de entrada
+    oferta_limpia = texto_oferta[:4000]
+    perfil_limpio = perfil_usuario[:3000]
+
     prompt = f"""
     You are a rigorous professional profile evaluator. Your goal is to calculate the exact compatibility between a candidate and a job offer using a mathematical, strict, and objective scoring system.
     
     CANDIDATE PROFILE:
-    {perfil_usuario}
+    {perfil_limpio}
     
     JOB OFFER TEXT:
-    {texto_oferta}
+    {oferta_limpia}
     
     SCORING SYSTEM (Total: 100 points):
     To calculate affinity, strictly evaluate these 4 generic categories:
@@ -68,7 +72,7 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     4. Conditions and Logistics (0-15 points): Does the candidate fit the work model (remote/on-site), location, and availability described in the offer?
 
     PENALIZATION RULES (Red flags):
-    - If the candidate lacks a requirement cataloged in the offer as "imprescindible", "excluyente", or "mandatory" (for example, a mandatory language or work permit), the total affinity score MUST NEVER exceed 40 points, regardless of how well they fit the rest.
+    - If the candidate lacks a requirement cataloged in the offer as "imprescindible", "excluyente", or "mandatory", the total affinity score MUST NEVER exceed 40 points, regardless of how well they fit the rest.
 
     WRITING INSTRUCTIONS:
     - LANGUAGE REQUIREMENT: Detect the language of the "JOB OFFER TEXT". Your evaluation content MUST be written in that EXACT SAME LANGUAGE. DO NOT translate the JSON keys.
@@ -87,7 +91,7 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     }}
     """
     
-    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, 1000)
     
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
     if match:
@@ -96,8 +100,10 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
         return '{"afinidad": 0, "puntos_a_favor": [], "puntos_en_contra": ["Error: IA no devolvió formato JSON"]}'
 
 
-
 def sintetizar_cv_bruto(texto_bruto):
+    # Un CV no debería pasar de estos caracteres. Evita que inyecten libros.
+    cv_recortado = texto_bruto[:6000]
+
     import urllib.request, urllib.error, json, os
     
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -107,7 +113,7 @@ def sintetizar_cv_bruto(texto_bruto):
     You are a talent acquisition expert in charge of structuring and cleaning raw resume data.
     
     RAW RESUME TEXT:
-    {texto_bruto}
+    {cv_recortado}
     
     STRICT INSTRUCTIONS:
     1. Your goal is to restructure the information and clean the format, NOT to summarize it excessively. You must preserve the hard data.
@@ -120,11 +126,12 @@ def sintetizar_cv_bruto(texto_bruto):
     """
     
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": "llama-3.1-8b-instant",
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.1
+        "temperature": 0.1,
+        "max_tokens": 1500 # Le damos algo más de margen por si el CV es largo
     }
     
     try:
@@ -147,14 +154,18 @@ def sintetizar_cv_bruto(texto_bruto):
         return texto_bruto
     
 async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
+    # Recorte extremo: Solo necesitamos contexto básico para rellenar un campo
+    oferta_ultra_recortada = texto_oferta[:2000]
+    perfil_recortado = perfil_usuario[:3000]
+
     prompt = f"""
     You are an Artificial Intelligence assistant that fills out job application forms invisibly.
     
     CANDIDATE PROFILE:
-    {perfil_usuario}
+    {perfil_recortado}
     
     JOB OFFER CONTEXT:
-    {texto_oferta}
+    {oferta_ultra_recortada}
     
     FIELD TO FILL OUT:
     "{contexto_campo}"
@@ -174,7 +185,8 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
     }}
     """
     
-    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
+    # max_tokens muy bajo (300) porque las respuestas a los campos son cortas
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, 300)
     
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
     if match:
