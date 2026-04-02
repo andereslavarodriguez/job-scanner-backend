@@ -14,6 +14,12 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MAX_INPUT_CHARS = 20_000   # Límite de seguridad para cualquier texto de entrada
 MAX_REINTENTOS = 2          # Número de reintentos si Groq falla
 
+# ── Modelos ────────────────────────────────────────────────
+# Cambia aquí si quieres probar otros sin buscar en el código
+MODELO_EVALUACION  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: openai/gpt-oss-120b
+MODELO_SINTETIZAR  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: llama-3.3-70b-versatile
+MODELO_AUTORELLENO = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: llama-3.3-70b-versatile
+
 # ============================================================
 # PROMPTS (separados de la lógica para facilitar su edición)
 # ============================================================
@@ -192,8 +198,8 @@ async def evaluar_oferta(texto_oferta: str, perfil_usuario: str) -> str:
         texto_oferta=texto_oferta,
     )
 
-    # Modelo asignado: El Cerebro Gigante (Analítica)
-    respuesta_raw = await _llamar_groq(prompt, "openai/gpt-oss-120b", json_mode=True)
+    # Modelo asignado: Evaluación
+    respuesta_raw = await _llamar_groq(prompt, MODELO_EVALUACION, json_mode=True)
 
     match = re.search(r"\{.*\}", respuesta_raw, re.DOTALL)
     if match:
@@ -210,8 +216,8 @@ async def sintetizar_cv_bruto(texto_bruto: str) -> str:
 
     prompt = PROMPT_SINTETIZAR_CV.format(texto_bruto=texto_bruto)
 
-    # Modelo asignado: El Extractor Preciso (sin JSON mode)
-    resultado = await _llamar_groq(prompt, "llama-3.3-70b-versatile", json_mode=False)
+    # Modelo asignado: Sintetizar CV
+    resultado = await _llamar_groq(prompt, MODELO_SINTETIZAR, json_mode=False)
 
     return resultado if resultado else texto_bruto
 
@@ -228,8 +234,8 @@ async def generar_respuesta_campo(
         contexto_campo=contexto_campo,
     )
 
-    # Modelo asignado: El Redactor (70B)
-    respuesta_raw = await _llamar_groq(prompt, "llama-3.3-70b-versatile", json_mode=True)
+    # Modelo asignado: Autorelleno
+    respuesta_raw = await _llamar_groq(prompt, MODELO_AUTORELLENO, json_mode=True)
 
     match = re.search(r"\{.*\}", respuesta_raw, re.DOTALL)
     if match:
