@@ -116,10 +116,13 @@ def sintetizar_cv_bruto(texto_bruto):
     1. Your goal is to restructure the information and clean the format, NOT to summarize it excessively. You must preserve the hard data.
     2. LANGUAGE REQUIREMENT: Detect the language of the "RAW RESUME TEXT". Your final structured text MUST be written in that EXACT SAME LANGUAGE. Do not translate it.
     3. CONTACT DATA: Keep intact at the beginning of the document the contact details, links, and locations present in the original text.
-    4. WORK EXPERIENCE: It is mandatory to extract and list each block of experience detailing the exact job title, the company, and the chronological duration of the experience. Do not omit job positions.
-    5. SKILLS AND TRAINING: Group the technologies, key tools, and academic degrees clearly and directly.
-    6. Write the final result in the first person, maintaining a professional tone, structured in clearly differentiated sections to facilitate its reading.
-    7. Return ONLY the final structured text. Do not use JSON format, only plain text.
+    4. DYNAMIC STRUCTURE: Organize the content into clearly separated main sections (e.g., Work Experience, Education, Projects, Certifications, etc.) based on whatever exists in the raw text. Do not ignore non-standard sections.
+    5. STRICT HIERARCHY (CRITICAL TO AVOID MIXING): For sections containing multiple items (like several jobs or several projects), you MUST clearly separate each item:
+       - Start each new item on a new line using a bold header format for its title and dates.
+       - List the internal details, responsibilities, or technologies of that specific item underneath it using standard bullet points.
+       - ALWAYS leave a blank empty line between one item and the next.
+    6. Write the final result in the first person, maintaining a professional tone.
+    7. Return ONLY the final structured plain text. Do not use JSON format.
     """
     
     # Modelo asignado: El Extractor Preciso (Apagamos el JSON mode)
