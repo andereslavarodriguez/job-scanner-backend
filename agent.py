@@ -15,10 +15,11 @@ MAX_INPUT_CHARS = 20_000   # Límite de seguridad para cualquier texto de entrad
 MAX_REINTENTOS = 2          # Número de reintentos si Groq falla
 
 # ── Modelos ────────────────────────────────────────────────
-# Cambia aquí si quieres probar otros sin buscar en el código
-MODELO_EVALUACION  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: openai/gpt-oss-120b
-MODELO_SINTETIZAR  = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: llama-3.3-70b-versatile
-MODELO_AUTORELLENO = "meta-llama/llama-4-scout-17b-16e-instruct"  # Antes: llama-3.3-70b-versatile
+# Cada tarea tiene el modelo más adecuado para ella.
+# Cambia aquí si quieres probar alternativas sin tocar el resto del código.
+MODELO_EVALUACION  = "openai/gpt-oss-120b"        # Razonamiento estricto. Necesita el modelo grande.
+MODELO_SINTETIZAR  = "llama-3.1-8b-instant"        # Solo restructura texto. Rápido y con límites altos (500K tokens/día).
+MODELO_AUTORELLENO = "llama-3.3-70b-versatile"     # Redacción con criterio. 70B es suficiente y soporta json_mode.
 
 # ============================================================
 # PROMPTS (separados de la lógica para facilitar su edición)
