@@ -6,29 +6,29 @@ import re
 import os
 from dotenv import load_dotenv
 
-# Cargamos las variables ocultas del sistema
 load_dotenv()
 
-def _ejecutar_groq_api(prompt, modelo="llama-3.3-70b-versatile"):
+def _ejecutar_groq_api(prompt, modelo="openai/gpt-oss-120b", json_mode=True):
     url = "https://api.groq.com/openai/v1/chat/completions"
     api_key = os.getenv("GROQ_API_KEY")
     
-    # --- CHIVATO DE DIAGNÓSTICO ---
     if not api_key:
         print("\n[-] ERROR: Python dice que la API Key es 'None'. No está leyendo el archivo .env.")
     else:
         print(f"\n[+] API Key detectada en memoria. Empieza por: {api_key[:8]}...")
-    # ------------------------------
     
     payload = {
-        "model": modelo, # <-- AHORA ES DINÁMICO
+        "model": modelo, 
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.1,
-        "response_format": {"type": "json_object"} 
+        "temperature": 0.1
     }
     
+    # Interruptor dinámico: Solo forzamos JSON si el agente lo necesita
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+        
     try:
         data = json.dumps(payload).encode('utf-8')
         req = urllib.request.Request(url, data=data)
@@ -39,15 +39,15 @@ def _ejecutar_groq_api(prompt, modelo="llama-3.3-70b-versatile"):
         with urllib.request.urlopen(req) as response:
             resultado = json.loads(response.read().decode('utf-8'))
             
-            # --- CHIVATO DE TOKENS ---
+            # --- EL CHIVATO MAESTRO PARA TODOS LOS AGENTES ---
             if 'usage' in resultado:
                 entrada = resultado['usage'].get('prompt_tokens', 0)
                 salida = resultado['usage'].get('completion_tokens', 0)
                 total = resultado['usage'].get('total_tokens', 0)
-                print(f"\n[📊 CONSUMO DE TOKENS | Modelo: {modelo}] Leyó: {entrada} | Escribió: {salida} | Total: {total}")
-            # --------------------------------
+                print(f"\n[📊 TOKENS | {modelo}] Leyó: {entrada} | Escribió: {salida} | Total: {total}")
+            # -------------------------------------------------
             
-            return resultado['choices'][0]['message']['content']
+            return resultado['choices'][0]['message']['content'].strip()
             
     except urllib.error.HTTPError as e:
         error_details = e.read().decode('utf-8')
@@ -56,7 +56,8 @@ def _ejecutar_groq_api(prompt, modelo="llama-3.3-70b-versatile"):
     except Exception as e:
         print(f"Error conectando con la API de Groq: {e}")
         return ""
-    
+
+
 async def evaluar_oferta(texto_oferta, perfil_usuario):
     prompt = f"""
     You are a rigorous professional profile evaluator. Your goal is to calculate the exact compatibility between a candidate and a job offer using a mathematical, strict, and objective scoring system.
@@ -94,8 +95,8 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
     }}
     """
     
-    # Aquí NO pasamos el segundo parámetro, por lo que usará el 70B por defecto
-    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt)
+    # Modelo asignado: El Cerebro Gigante (Analítica)
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, "openai/gpt-oss-120b", True)
     
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
     if match:
@@ -105,11 +106,6 @@ async def evaluar_oferta(texto_oferta, perfil_usuario):
 
 
 def sintetizar_cv_bruto(texto_bruto):
-    import urllib.request, urllib.error, json, os
-    
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    api_key = os.getenv("GROQ_API_KEY") 
-    
     prompt = f"""
     You are a talent acquisition expert in charge of structuring and cleaning raw resume data.
     
@@ -126,33 +122,14 @@ def sintetizar_cv_bruto(texto_bruto):
     7. Return ONLY the final structured text. Do not use JSON format, only plain text.
     """
     
-    payload = {
-        "model": "llama-3.1-8b-instant", # <-- AHORRO: Usamos el modelo ligero para estructurar el texto
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.1
-    }
+    # Modelo asignado: El Extractor Preciso (Apagamos el JSON mode)
+    resultado = _ejecutar_groq_api(prompt, "llama-3.3-70b-versatile", False)
     
-    try:
-        data = json.dumps(payload).encode('utf-8')
-        req = urllib.request.Request(url, data=data)
-        req.add_header('Content-Type', 'application/json')
-        req.add_header('Authorization', f'Bearer {api_key}')
-        req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
-        
-        with urllib.request.urlopen(req) as response:
-            resultado = json.loads(response.read().decode('utf-8'))
-            return resultado['choices'][0]['message']['content'].strip()
-            
-    except urllib.error.HTTPError as e:
-        error_details = e.read().decode('utf-8')
-        print(f"\n[-] GROQ RECHAZÓ LA PETICIÓN 400: {error_details}")
+    if not resultado:
         return texto_bruto
-    except Exception as e:
-        print(f"\n[-] ERROR LOCAL AL SINTETIZAR: {e}")
-        return texto_bruto
-    
+    return resultado
+
+
 async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta=""):
     prompt = f"""
     You are an Artificial Intelligence assistant that fills out job application forms invisibly.
@@ -181,8 +158,8 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
     }}
     """
     
-    # <-- AHORRO: Le pasamos explícitamente el modelo ligero para esta tarea repetitiva
-    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, "llama-3.1-8b-instant")
+    # Modelo asignado: El Redactor Rápido (Ráfagas)
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, "meta-llama/llama-4-scout-17b-16e-instruct", True)
     
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
     if match:
