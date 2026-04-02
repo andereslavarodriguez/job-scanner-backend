@@ -21,7 +21,6 @@ def _ejecutar_groq_api(prompt):
     # ------------------------------
     
     payload = {
-        # Devolvemos el "Cerebro Grande" para que razone bien la puntuación
         "model": "llama-3.3-70b-versatile", 
         "messages": [
             {"role": "user", "content": prompt}
@@ -39,6 +38,15 @@ def _ejecutar_groq_api(prompt):
         
         with urllib.request.urlopen(req) as response:
             resultado = json.loads(response.read().decode('utf-8'))
+            
+            # --- NUEVO: CHIVATO DE TOKENS ---
+            if 'usage' in resultado:
+                entrada = resultado['usage'].get('prompt_tokens', 0)
+                salida = resultado['usage'].get('completion_tokens', 0)
+                total = resultado['usage'].get('total_tokens', 0)
+                print(f"\n[📊 CONSUMO DE TOKENS] Leyó: {entrada} | Escribió: {salida} | Total Gastado: {total}")
+            # --------------------------------
+            
             return resultado['choices'][0]['message']['content']
             
     except urllib.error.HTTPError as e:
