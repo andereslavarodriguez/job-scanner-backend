@@ -1,17 +1,23 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import json
 import PyPDF2
 import io
 
-# Importamos la nueva función generar_respuesta_campo
-from agent import evaluar_oferta, sintetizar_cv_bruto, generar_respuesta_campo 
+from agent import evaluar_oferta, sintetizar_cv_bruto, generar_respuesta_campo
 
-# 1. CREAMOS LA APLICACIÓN (Los cimientos)
-app = FastAPI()
+# ============================================================
+# 1. APLICACIÓN
+# ============================================================
+app = FastAPI(
+    title="AI Job Scanner API",
+    version="1.4.0",
+)
 
-# 2. CONFIGURAMOS CORS
+# ============================================================
+# 2. CORS
+# ============================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,75 +26,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. MODELOS DE DATOS
+# ============================================================
+# 3. MODELOS DE DATOS (Pydantic valida automáticamente)
+# ============================================================
 class DatosEvaluacion(BaseModel):
-    perfil: str
-    descripcion_oferta: str
+    perfil: str = Field(..., min_length=10, description="Texto del perfil del candidato")
+    descripcion_oferta: str = Field(..., min_length=10, description="Texto de la oferta de trabajo")
 
-# 4. RUTAS (ENDPOINTS)
+class DatosRellenarCampo(BaseModel):
+    perfil: str = Field(..., min_length=1)
+    contexto: str = Field(..., min_length=1)
+    oferta: str = Field(default="")
+
+# ============================================================
+# 4. ENDPOINTS
+# ============================================================
 @app.post("/evaluar")
 async def endpoint_evaluar(datos: DatosEvaluacion):
-    print(f"\n[+] Recibida petición de evaluación.")
+    print(f"\n[+] Petición de evaluación recibida.")
     print(f"--- TEXTO EXTRAÍDO DE LA WEB ---\n{datos.descripcion_oferta[:500]}...\n--------------------------------")
-    
-    # Llamamos a tu IA
+
     respuesta_json_string = await evaluar_oferta(datos.descripcion_oferta, datos.perfil)
-    
+
     try:
         resultado_dict = json.loads(respuesta_json_string)
         print(f"\n[🧠 PENSAMIENTO DE LA IA]: {resultado_dict.get('razonamiento_interno', 'No generó razonamiento')}")
-        print(f"[+] Evaluación completada: Afinidad -> {resultado_dict.get('afinidad')}%")
+        print(f"[+] Evaluación completada: Afinidad → {resultado_dict.get('afinidad')}%")
         return resultado_dict
     except Exception as e:
         print(f"[-] Error parseando la respuesta de la IA: {e}")
-        return {"afinidad": 0, "puntos_a_favor": [], "puntos_en_contra": ["Error de procesamiento en el servidor local."]}
-    
+        return {
+            "afinidad": 0,
+            "puntos_a_favor": [],
+            "puntos_en_contra": ["Error de procesamiento en el servidor."],
+        }
+
+
 @app.post("/extraer-cv")
 async def extraer_cv(archivo: UploadFile = File(...)):
-    # Verificamos que sea un PDF
-    if not archivo.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="El archivo debe ser un PDF")
-    
+    if not archivo.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un PDF.")
+
     try:
-        # Leemos el archivo directamente desde la memoria
         contenido = await archivo.read()
         lector_pdf = PyPDF2.PdfReader(io.BytesIO(contenido))
-        
+
         texto_extraido = ""
-        # Recorremos todas las páginas del PDF extrayendo el texto
         for pagina in lector_pdf.pages:
             texto_extraido += pagina.extract_text() + "\n"
-            
-        # Limpiamos los saltos de línea excesivos
+
         texto_limpio = " ".join(texto_extraido.split())
-        
+
         if not texto_limpio or len(texto_limpio) < 50:
-            raise HTTPException(status_code=400, detail="No se pudo extraer texto legible del PDF. Puede que sea una imagen escaneada.")
-            
-        # Pasamos el texto robótico por nuestro Agente Sintetizador
-        texto_optimizado = sintetizar_cv_bruto(texto_limpio)
-        
+            raise HTTPException(
+                status_code=400,
+                detail="No se pudo extraer texto legible del PDF. Puede que sea una imagen escaneada.",
+            )
+
+        # sintetizar_cv_bruto ahora es async, await correcto
+        texto_optimizado = await sintetizar_cv_bruto(texto_limpio)
         return {"texto_cv": texto_optimizado}
-        
+
+    except HTTPException:
+        raise  # Re-lanzamos las HTTPException que hemos creado a propósito
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando el PDF: {str(e)}")
-    
-@app.post("/rellenar_campo")
-async def rellenar_campo(request: Request):
-    try:
-        data = await request.json()
-        perfil_usuario = data.get("perfil", "")
-        contexto_campo = data.get("contexto", "")
-        texto_oferta = data.get("oferta", "") # NUEVO: Atrapamos el contexto de la web
-        
-        print(f"\n[+] Solicitud de autorrellenado recibida para el campo: {contexto_campo}")
-        
-        # Pasamos los 3 datos a la IA de Groq
-        texto_final = await generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta)
-        
-        print(f"[+] Respuesta generada: {texto_final}")
-        return {"respuesta": texto_final}
 
-    except Exception as e:
-        print(f"[-] Error en el endpoint rellenar_campo: {str(e)}")
-        return {"error": str(e)}
+
+@app.post("/rellenar_campo")
+async def rellenar_campo(datos: DatosRellenarCampo):
+    print(f"\n[+] Autorrellenado solicitado para el campo: '{datos.contexto}'")
+
+    texto_final = await generar_respuesta_campo(datos.contexto, datos.perfil, datos.oferta)
+
+    print(f"[+] Respuesta generada: {texto_final}")
+    return {"respuesta": texto_final}
