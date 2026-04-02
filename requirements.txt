@@ -3,3 +3,4 @@ uvicorn
 python-dotenv
 PyPDF2
 python-multipart
+httpx
