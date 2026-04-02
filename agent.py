@@ -158,8 +158,8 @@ async def generar_respuesta_campo(contexto_campo, perfil_usuario, texto_oferta="
     }}
     """
     
-    # Modelo asignado: El Redactor Rápido (Ráfagas)
-    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, "meta-llama/llama-4-scout-17b-16e-instruct", True)
+    # <-- CAMBIO: Devolvemos el poder de redacción al modelo 70B
+    respuesta_raw = await asyncio.to_thread(_ejecutar_groq_api, prompt, "llama-3.3-70b-versatile", True)
     
     match = re.search(r'\{.*\}', respuesta_raw, re.DOTALL)
     if match:
